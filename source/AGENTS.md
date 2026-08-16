@@ -53,11 +53,16 @@ Agent → tier mapping (`tradingagents/graph/setup.py:75–92`):
 | **Pro 0813** (deep) | Research Manager (debate judge), Portfolio Manager (final approval). **← add Trader (recommended upgrade, +~$0.01/run)** |
 | **Flash 0731** (quick) | Market/Technical, News, Fundamentals, Sentiment analysts · Bull & Bear researchers · Trader (until upgraded) · Aggressive/Neutral/Conservative risk debaters · Reflector + SignalProcessor (`trading_graph.py:137–138`) |
 
-Cost model (measured judgment, verify with StatsCallbackHandler):
+Cost model (**MEASURED 2026-08-16** — one live AAPL run, StatsCallbackHandler, 1 debate + 1 risk round, all 12 agents):
 
-- Per ticker-run: **~$0.03–0.06** (150–250K in / 12–25K out on Flash; 30–60K in / 4–8K out on Pro)
-- 5 tickers × daily pre-market ≈ **$3–6/month**; data APIs (yfinance/FRED/Polymarket) all free tier. Alpha Vantage free tier = 25 req/day (don't rely on it).
-- Exact measurement: repo ships `StatsCallbackHandler` (`cli/stats_handler.py`) — use it on one real run before scaling.
+- **Measured per-ticker run: 205.5K tokens in / 75.0K tokens out, 20 LLM calls, 39 tool calls, ~16.5 min wall time.**
+- Pricing at the confirmed per-1M rates:
+  - **All-Flash floor: $0.024** (205.5K×$0.06846/1M + 75K×$0.1369/1M)
+  - **All-Pro ceiling: $0.155** (205.5K×$0.435/1M + 75K×$0.87/1M)
+  - True cost sits between: deep tier is 2 of 12 agents (Research Manager + Portfolio Manager) — expect **~$0.03–0.06/run**, consistent with the original estimate.
+- ⚠️ StatsCallbackHandler aggregates across tiers (no per-model split). Exact Pro vs Flash token split + exact $ requires a small stats-handler patch (add per-model counters); deferred rather than estimated.
+- 5 tickers × daily pre-market ≈ **$3–6/month**; data APIs (yfinance/FRED/Polymarket) all free tier.
+- Live-run decision (2026-08-16, AAPL at $305.93): **Underweight — trim toward underweight, tranche sells into $309–313 strength, re-enter on close >$313 or flush to $280–290.**
 
 ## 4. THE CUSTOM FUNCTION — external research ingestion (upload path)
 
@@ -81,8 +86,8 @@ the vault.
 
 ## 5. Build status (updated 2026-08-16 after Phase A)
 
-1. **`external_research` vendor (§4) → PR #1 `feature/external-research-vendor`** (open, CI pending); tests green (585 pass, ruff clean). ✅ built, in review
-2. **Env config** (§3) → verify with one live run + StatsCallbackHandler → record true per-run cost in this file. *⚠️ Blocked: repo `.env` currently has NO `OPENROUTER_API_KEY` (removed 2026-08-16 to fix the Hermes-side 403 content-filter redaction; key lives in `~/.hermes/.env`). Re-add at run time only (`export OPENROUTER_API_KEY=…` or `.env`) — see plan Phase B.*
+1. **`external_research` vendor (§4) → PR #1 (merged 2026-08-16)**; 585 tests pass, ruff clean, CI green on 3.10–3.13. ✅ built + merged
+2. **Env config** (§3) → verify with one live run + StatsCallbackHandler → record true per-run cost in this file. **DONE 2026-08-16**: live AAPL run succeeded on OpenRouter + DeepSeek V4 (measured stats in §3). Key handling stays **runtime-export only** (never in repo `.env`).
 3. **Obsidian report adapter (write side)**: point `TRADINGAGENTS_RESULTS_DIR` → `<vault>/reports/`, `TRADINGAGENTS_MEMORY_LOG_PATH` → `<vault>/trading_memory.md`; prepend YAML frontmatter (`ticker`, `date`, `decision`, `confidence`) + wikilinks (one line each — Obsidian rule); hub note `[[Trading Dashboard]]` linking runs.
 4. **marker-pdf install** in vault `.venv` (`pip install marker-pdf`, ~3–5 GB + ~2.5 GB model cache) — only when the first table-dense PDF arrives.
 5. **Discord notification cron** (Hermes): pre-market, e.g. `30 20 * * 1-5` (NYSE 9:30 ET in Bangkok time). Watchdog style: read latest `complete_report.md` → print compact `📊 TICKER: action, confidence` line → delivered to Discord channel; empty stdout = silent. Notification only — no conversational bot.
