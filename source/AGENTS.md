@@ -79,10 +79,10 @@ the vault.
 - Discord-fetching stays OUT of the repo — it's a future Hermes cron job that writes into `incoming/`, reusing the exact same hook (zero re-architecture).
 - The repo stays lean: no marker/PyTorch deps in `pyproject.toml`.
 
-## 5. Supporting build items (pending, in order)
+## 5. Build status (updated 2026-08-16 after Phase A)
 
-1. **`external_research` vendor** (§4) → PR → tests. *First build item.*
-2. **Env config** (§3) → verify with one live run + StatsCallbackHandler → record true per-run cost in this file.
+1. **`external_research` vendor (§4) → PR #1 `feature/external-research-vendor`** (open, CI pending); tests green (585 pass, ruff clean). ✅ built, in review
+2. **Env config** (§3) → verify with one live run + StatsCallbackHandler → record true per-run cost in this file. *⚠️ Blocked: repo `.env` currently has NO `OPENROUTER_API_KEY` (removed 2026-08-16 to fix the Hermes-side 403 content-filter redaction; key lives in `~/.hermes/.env`). Re-add at run time only (`export OPENROUTER_API_KEY=…` or `.env`) — see plan Phase B.*
 3. **Obsidian report adapter (write side)**: point `TRADINGAGENTS_RESULTS_DIR` → `<vault>/reports/`, `TRADINGAGENTS_MEMORY_LOG_PATH` → `<vault>/trading_memory.md`; prepend YAML frontmatter (`ticker`, `date`, `decision`, `confidence`) + wikilinks (one line each — Obsidian rule); hub note `[[Trading Dashboard]]` linking runs.
 4. **marker-pdf install** in vault `.venv` (`pip install marker-pdf`, ~3–5 GB + ~2.5 GB model cache) — only when the first table-dense PDF arrives.
 5. **Discord notification cron** (Hermes): pre-market, e.g. `30 20 * * 1-5` (NYSE 9:30 ET in Bangkok time). Watchdog style: read latest `complete_report.md` → print compact `📊 TICKER: action, confidence` line → delivered to Discord channel; empty stdout = silent. Notification only — no conversational bot.
