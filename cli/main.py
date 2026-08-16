@@ -1261,7 +1261,11 @@ def run_analysis(checkpoint: bool | None = None):
     save_choice = typer.prompt("Save report?", default="Y").strip().upper()
     if save_choice in ("Y", "YES", ""):
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        default_path = Path.cwd() / "reports" / f"{selections['ticker']}_{timestamp}"
+        # Default the save location into the Obsidian vault's reports dir
+        # (TRADINGAGENTS_RESULTS_DIR -> <vault>/reports) so a plain-Enter save
+        # lands the report tree where the frontmatter/wikilink adapter and the
+        # hub note live (AI-OS write side).
+        default_path = Path(config["results_dir"]) / f"{selections['ticker']}_{timestamp}"
         save_path_str = typer.prompt(
             "Save path (press Enter for default)",
             default=str(default_path)
