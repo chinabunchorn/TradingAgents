@@ -221,3 +221,15 @@ __marimo__/
 # Enterprise env file (secrets) and generated run reports
 .env.enterprise
 reports/
+
+# AI-OS vault (source/): commit only the contract docs, never the data
+.DS_Store
+.hermes/
+source/.obsidian/
+source/incoming/*
+!source/incoming/README.md
+!source/incoming/archive/
+source/incoming/archive/*
+!source/incoming/archive/.gitkeep
+source/reports/
+source/trading_memory.md
