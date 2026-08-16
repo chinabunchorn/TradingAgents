@@ -9,6 +9,12 @@ run produces the same on-disk report tree a CLI run does.
 from datetime import datetime
 from pathlib import Path
 
+from tradingagents.reporting_frontmatter import (
+    decorate_complete_report,
+    parse_report_meta,
+    sync_hub_note,
+)
+
 
 def write_report_tree(final_state: dict, ticker: str, save_path) -> Path:
     """Save a completed run's reports to ``save_path``; return the complete-report path."""
@@ -95,7 +101,23 @@ def write_report_tree(final_state: dict, ticker: str, save_path) -> Path:
             (portfolio_dir / "decision.md").write_text(risk["judge_decision"], encoding="utf-8")
             sections.append(f"## V. Portfolio Manager Decision\n\n### Portfolio Manager\n{risk['judge_decision']}")
 
-    # Write consolidated report
-    header = f"# Trading Analysis Report: {ticker}\n\nGenerated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
-    (save_path / "complete_report.md").write_text(header + "\n\n".join(sections), encoding="utf-8")
-    return save_path / "complete_report.md"
+    # Write consolidated report, then decorate it for Obsidian (C2: YAML
+    # frontmatter + [[Trading Dashboard]] wikilink) and sync the hub note that
+    # links every run (C3).
+    now = datetime.now()
+    header = f"# Trading Analysis Report: {ticker}\n\nGenerated: {now.strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+    complete = save_path / "complete_report.md"
+    body = header + "\n\n".join(sections)
+    complete.write_text(body, encoding="utf-8")
+
+    date_str = now.strftime("%Y-%m-%d")
+    decorate_complete_report(complete, ticker, date_str)
+    meta = parse_report_meta(body)
+    sync_hub_note(
+        save_path.parent / "Trading Dashboard.md",
+        ticker,
+        date_str,
+        meta["decision"],
+        meta["confidence"],
+    )
+    return complete
