@@ -73,6 +73,14 @@ DEFAULT_CONFIG = _apply_env_overrides({
     "results_dir": os.getenv("TRADINGAGENTS_RESULTS_DIR", os.path.join(_TRADINGAGENTS_HOME, "logs")),
     "data_cache_dir": os.getenv("TRADINGAGENTS_CACHE_DIR", os.path.join(_TRADINGAGENTS_HOME, "cache")),
     "memory_log_path": os.getenv("TRADINGAGENTS_MEMORY_LOG_PATH", os.path.join(_TRADINGAGENTS_HOME, "memory", "trading_memory.md")),
+    # Ingest folder for the external_research vendor (AI-OS upload path):
+    # the user drops .md/.txt research files here; the vendor reads the newest
+    # one during get_global_news and archives it after (see AGENTS.md §4).
+    "external_research_dir": os.getenv(
+        "TRADINGAGENTS_EXTERNAL_RESEARCH_DIR",
+        # The vault lives in-repo at <repo>/source; ingest folder <vault>/incoming/.
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "source", "incoming"),
+    ),
     # Optional cap on the number of resolved memory log entries. When set,
     # the oldest resolved entries are pruned once this limit is exceeded.
     # Pending entries are never pruned. None disables rotation entirely.
@@ -140,7 +148,12 @@ DEFAULT_CONFIG = _apply_env_overrides({
     },
     # Tool-level configuration (takes precedence over category-level)
     "tool_vendors": {
-        # Example: "get_stock_data": "alpha_vantage",  # Override category default
+        # AI-OS upload path (AGENTS.md §4): global news reads the user's
+        # research file whenever one is pending; empty folder ⇒ vendor raises
+        # NoMarketDataError and the router falls through to yfinance (same
+        # behavior as stock TradingAgents). get_news keeps the category
+        # default ("yfinance") and never sees the ingest folder.
+        "get_global_news": "external_research,yfinance",
     },
     # Benchmark for alpha calculation in the reflection layer.
     # ``benchmark_ticker`` (when set) overrides the suffix map for all
