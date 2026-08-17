@@ -21,7 +21,6 @@ from rich.text import Text
 
 from cli.announcements import display_announcements, fetch_announcements
 from cli.stats_handler import StatsCallbackHandler
-from tradingagents.reporting_frontmatter import decorate_section_file
 from cli.utils import (
     ask_anthropic_effort,
     ask_gemini_thinking_config,
@@ -51,6 +50,7 @@ from tradingagents.graph.analyst_execution import (
 )
 from tradingagents.graph.trading_graph import TradingAgentsGraph
 from tradingagents.reporting import write_report_tree
+from tradingagents.reporting_frontmatter import decorate_section_file
 
 console = Console()
 
