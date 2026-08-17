@@ -21,6 +21,7 @@ from rich.text import Text
 
 from cli.announcements import display_announcements, fetch_announcements
 from cli.stats_handler import StatsCallbackHandler
+from tradingagents.reporting_frontmatter import decorate_section_file
 from cli.utils import (
     ask_anthropic_effort,
     ask_gemini_thinking_config,
@@ -1070,8 +1071,15 @@ def run_analysis(checkpoint: bool | None = None):
                 if content:
                     file_name = f"{section_name}.md"
                     text = "\n".join(str(item) for item in content) if isinstance(content, list) else content
-                    with open(report_dir / file_name, "w", encoding="utf-8") as f:
-                        f.write(text)
+                    target = report_dir / file_name
+                    target.write_text(text, encoding="utf-8")
+                    # Graph fix: this eager flat-tree section note (written
+                    # before the save prompt) must not strand as an orphan in
+                    # Obsidian — link it to the per-ticker hub. No date link:
+                    # the flat tree's directory date (analysis_date) may not
+                    # match the run-note alias date, so a dated link here would
+                    # only create new dangling nodes.
+                    decorate_section_file(target, selections["ticker"], "", section_name)
         return wrapper
 
     message_buffer.add_message = save_message_decorator(message_buffer, "add_message")

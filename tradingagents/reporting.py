@@ -11,8 +11,10 @@ from pathlib import Path
 
 from tradingagents.reporting_frontmatter import (
     decorate_complete_report,
+    decorate_section_file,
     parse_report_meta,
     sync_hub_note,
+    sync_ticker_hub,
 )
 
 
@@ -120,4 +122,26 @@ def write_report_tree(final_state: dict, ticker: str, save_path) -> Path:
         meta["decision"],
         meta["confidence"],
     )
+    # Graph fix: per-ticker hub chaining this stock's history, so repeated
+    # runs of the same ticker stay connected instead of piling up isolated.
+    sync_ticker_hub(
+        save_path.parent / f"{ticker}.md",
+        ticker,
+        date_str,
+        meta["decision"],
+        meta["confidence"],
+    )
+    # Graph fix: link every per-section note (1_analysts/*.md … 5_portfolio/*.md)
+    # into the graph so a run's folder clusters around its dated note + ticker
+    # hub instead of stranding a dozen orphan nodes. complete_report.md is
+    # skipped — it already got richer frontmatter above.
+    for spath in sorted(save_path.rglob("*.md")):
+        if spath.name == "complete_report.md":
+            continue
+        decorate_section_file(
+            spath,
+            ticker,
+            date_str,
+            f"{spath.parent.name}/{spath.stem}",
+        )
     return complete

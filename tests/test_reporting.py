@@ -23,11 +23,17 @@ def _state():
 def test_write_report_tree_creates_files(tmp_path):
     out = write_report_tree(_state(), "AAPL", tmp_path)
     assert out.name == "complete_report.md"
-    assert (tmp_path / "1_analysts" / "market.md").read_text() == "MKT"
-    assert (tmp_path / "1_analysts" / "news.md").read_text() == "NEWS"
-    assert (tmp_path / "2_research" / "manager.md").read_text() == "RM PLAN"
-    assert (tmp_path / "3_trading" / "trader.md").read_text() == "TRADE"
-    assert (tmp_path / "5_portfolio" / "decision.md").read_text() == "PM DECISION"
+    market = (tmp_path / "1_analysts" / "market.md").read_text()
+    assert market.startswith("---\n")
+    assert "ticker: AAPL" in market
+    assert "section: 1_analysts/market" in market
+    assert "MKT" in market
+    assert "[[AAPL]]" in market
+
+    assert "NEWS" in (tmp_path / "1_analysts" / "news.md").read_text()
+    assert "RM PLAN" in (tmp_path / "2_research" / "manager.md").read_text()
+    assert "TRADE" in (tmp_path / "3_trading" / "trader.md").read_text()
+    assert "PM DECISION" in (tmp_path / "5_portfolio" / "decision.md").read_text()
     complete = out.read_text()
     assert "Trading Analysis Report: AAPL" in complete
     assert "MKT" in complete and "PM DECISION" in complete
